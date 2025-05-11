@@ -1,5 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.dates import AutoDateLocator, AutoDateFormatter
+from matplotlib.font_manager import FontProperties
 
 # Define column names
 columns = [
@@ -22,56 +24,42 @@ tsla_df = df[df["Symbol"] == "TSLA"].copy()
 start_index = 20
 tsla_df_trimmed = tsla_df.iloc[start_index:]
 
-# Plot Up and Down Probabilities for TSLA with baseline
-plt.figure(figsize=(10, 5))
-plt.plot(tsla_df_trimmed["Timestamp"], tsla_df_trimmed["UpProbability"], label="Up Probability", color="green")
-plt.plot(tsla_df_trimmed["Timestamp"], tsla_df_trimmed["DownProbability"], label="Down Probability", color="red")
-plt.axhline(0.5, color="blue", linestyle="--", label="Indifference (p=0.5)")
-plt.xlabel("Date")
-plt.ylabel("Probability")
-plt.title("TSLA Up and Down Probabilities Over Time")
-plt.xticks(rotation=45)
-plt.grid(True)
-plt.legend()
-plt.tight_layout()
-plt.savefig("tsla_probabilities_with_baseline.png")
-# plt.show()
+Title = "Corey Portfolio" # Setting a consistent title
 
-# Plot Displacement Energy for TSLA with baseline
-plt.figure(figsize=(10, 5))
-plt.plot(tsla_df_trimmed["Timestamp"], tsla_df_trimmed["DisplacementEnergy"], label="Displacement Energy", color="blue")
-plt.axhline(0.0, color="red", linestyle="--", label="No Energy Change (E=0.0)")
-plt.xlabel("Date")
-plt.ylabel("Displacement Energy")
-plt.title("TSLA Displacement Energy Over Time")
-plt.xticks(rotation=45)
-plt.grid(True)
-plt.legend()
-plt.tight_layout()
-plt.savefig("tsla_displacement_energy_with_baseline.png")
-# plt.show()
+# Prepare data for the specific Temperature-Free Energy plot style
+dates = tsla_df_trimmed["Timestamp"].tolist()
+learning = 0  # We are starting from the beginning of the trimmed data
+temperature_data = tsla_df_trimmed["Temp"].tolist()
+free_energy_data = tsla_df_trimmed["FreeEnergy"].tolist()
 
-# Double-sided plot for Temperature and Free Energy
-fig, ax1 = plt.subplots(figsize=(10, 5))
+# Create the double-sided plot for Temperature and Free Energy (Matching Style)
+fig5, ax5 = plt.subplots(figsize=(10, 5))
+plt.title(Title + ', Temperature-Free Energy')
+plt.xlim((dates[learning], dates[-1]))
 
-color = 'tab:red'
-ax1.set_xlabel('Date')
-ax1.set_ylabel('Temperature', color=color)
-ax1.plot(tsla_df_trimmed["Timestamp"], tsla_df_trimmed["Temp"], color=color, label="Temperature")
-ax1.tick_params(axis='y', labelcolor=color)
-ax1.tick_params(axis='x', rotation=45)
-ax1.grid(True)
-ax1.legend(loc='upper left')
-fig.tight_layout()
+ax5.plot_date(dates[learning:len(dates)], temperature_data[learning:len(dates)], 'r-', label='temperature')
+ax5.tick_params(axis='y')
+xtick_locator = AutoDateLocator()
+xtick_formatter = AutoDateFormatter(xtick_locator)
+ax5.xaxis.set_major_locator(xtick_locator)
+ax5.xaxis.set_major_formatter(xtick_formatter)
 
-ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+ax5.set_xlabel('Date')
+ax5.set_ylabel('Temperature')
+ax5.autoscale_view()
+ax5.grid(True)
+fig5.autofmt_xdate()
 
-color = 'tab:blue'
-ax2.set_ylabel('Free Energy', color=color)  # we already handled the x-label with ax1
-ax2.plot(tsla_df_trimmed["Timestamp"], tsla_df_trimmed["FreeEnergy"], color=color, label="Free Energy")
-ax2.tick_params(axis='y', labelcolor=color)
-ax2.legend(loc='upper right')
+ax6 = ax5.twinx()  # instantiate a second axis that shares the same x-axis
 
-plt.title("TSLA Temperature and Free Energy Over Time")
-plt.savefig("tsla_temp_free_energy.png")
-# plt.show()
+ax6.set_ylabel('Free energy')
+ax6.plot_date(dates[learning:len(dates)], free_energy_data[learning:len(dates)], 'b-', label='free energy')
+ax6.tick_params(axis='y')
+
+fontP = FontProperties(size='small')
+ax5.legend(loc='upper center', bbox_to_anchor=(0.14, 0.98), ncol=3, prop=fontP)
+ax6.legend(loc='upper center', bbox_to_anchor=(0.5, 0.3), ncol=3, prop=fontP)
+
+fig5.tight_layout()  # otherwise the right y-label is slightly clipped
+plt.savefig(f"{Title.replace(' ', '_')}_temp_free_energy_matching.png")
+plt.show()
